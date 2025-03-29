@@ -186,7 +186,9 @@ export const estimateTimeForUpgrade = (data: EstimateTimeForChestsData) => {
     ownedResources.cogs +
     ownedResources.metal
   );
-  const woodenChestsNeeded = Math.ceil((totalComponentsRequired - totalComponentsOwned) / (chestComponentsMap.wooden * 0.8 * 0.2));
+  // multiply by 0.8: 80% of the components go into favorited war machines
+  // divide by 5: components are spread more or less evenly across all 5 favorite war machines
+  const woodenChestsNeeded = Math.ceil((totalComponentsRequired - totalComponentsOwned) / (chestComponentsMap.wooden * 0.8 / 5));
   const totalComponentsNeeded = woodenChestsNeeded * chestComponentsMap.wooden;
 
   const chests: Partial<Record<JewelChest, number>> = {};
