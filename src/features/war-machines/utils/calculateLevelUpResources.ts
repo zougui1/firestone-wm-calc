@@ -47,26 +47,3 @@ export const calculateResources = (currentLevel: number, targetLevel: number) =>
     expeditionTokens,
   };
 }
-
-{
-  const currentLevel = 47;
-  const targetLevel = 48;
-
-  let totalXP = 0;
-  // XP needed to reach level 2
-  let requiredXP = 100;
-
-  for (let level = 1; level < targetLevel; level++) {
-    if (level >= currentLevel) {
-      totalXP += requiredXP;
-    }
-
-    requiredXP += 10;
-  }
-
-  const calculateLevelUpCost = (upgradeCost) => {
-    return roundDownToStep((totalXP / 100) * upgradeCost, upgradeCost);
-  }
-
-  console.log(calculateLevelUpCost(500));
-}

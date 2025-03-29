@@ -247,30 +247,6 @@ export const estimateTimeForUpgrade = (data: EstimateTimeForChestsData) => {
   return day;
 }
 
-console.clear();
-console.log(estimateTimeForUpgrade({
-  stars: 74,
-  emblems: 0,
-  ownedResources: {
-    screws: 0,
-    cogs: 0,
-    metal: 0,
-    expeditionTokens: 0,
-  },
-  /*requiredResources: {
-    screws: 1000,
-    cogs: 0,
-    metal: 20,
-    expeditionTokens: 8500,
-  },*/
-  requiredResources: {
-    screws: 340,
-    cogs: 204,
-    metal: 17,
-    expeditionTokens: 8500,
-  },
-}));
-
 export interface EstimateTimeForChestsData {
   stars: number;
   emblems: number;

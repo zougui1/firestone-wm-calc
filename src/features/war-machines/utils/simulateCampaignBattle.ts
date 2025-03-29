@@ -338,7 +338,6 @@ export const formatResults = (data: Partial<Record<Difficulty, InternalDifficult
 const defaultTotalSimulations = 10_000;
 
 export const simulateCampaign = async (playerWarMachines: SimulationWarMachine[], power: number, options?: SimulateCampaignOptions) => {
-  console.log('simulate campaign')
   playerWarMachines = sort(playerWarMachines, warMachine => warMachine.health + warMachine.armor * 10 - warMachine.damage * 10, true);
 
   const totalSimulations = options?.totalSimulations ?? defaultTotalSimulations;

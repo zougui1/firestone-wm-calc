@@ -20,7 +20,6 @@ interface WarMachineMetadata {
 }
 
 export const findTargetStarFormation = async (data: GameData, targetStarLevel: number, options?: FindTargetStarFormationOptions) => {
-  console.log('findTargetStarFormation')
   data = structuredClone(data);
 
   const currentBestCrew = await invokeComputeBestCrew(data, options);
@@ -239,7 +238,6 @@ export const findTargetStarFormation = async (data: GameData, targetStarLevel: n
     }
   }
 
-  console.log('stars:', stars)
   return data;
 }
 
