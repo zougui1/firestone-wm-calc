@@ -3,16 +3,19 @@ import { Button, Dialog, Form } from '@zougui/react.ui'
 import { useAppForm } from '~/hooks';
 
 import { formSchema } from './ImportDialog';
-import { gameDataStore } from '../gameData/store';
+import { warMachineStore } from '../warMachine.store';
 import { useSelector } from '@xstate/store/react';
 
 export const ExportDialog = ({ children }: ExportDialogProps) => {
-  const state = useSelector(gameDataStore, state => state.context);
+  const state = useSelector(warMachineStore, state => state.context.current);
 
   const form = useAppForm({
     schema: formSchema,
     values: {
-      warMachines: JSON.stringify(state.warMachines) as never,
+      warMachines: JSON.stringify({
+        leagueBonus: state.leagueBonus ?? 0,
+        warMachines: state.warMachines,
+      }) as never,
       heroes: JSON.stringify(state.crewHeroes) as never,
       artifactTypes: JSON.stringify(state.artifactTypes) as never,
     },

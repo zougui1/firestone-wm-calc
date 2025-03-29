@@ -2,8 +2,8 @@ import { sort } from 'radash';
 
 import { randomInt } from '~/utils';
 
-import { difficulties, Difficulty, difficultyList } from '../gameData/enums';
-import { WarMachineName, warMachinesBaseData } from '../gameData/data';
+import { difficulties, Difficulty, difficultyList } from '../enums';
+import { WarMachineName, warMachinesBaseData } from '../data';
 import { invokeSimulateDetailedMission } from '../workers/simulateDetailedMission.invoke';
 
 export interface SimulationWarMachine {
@@ -325,7 +325,7 @@ export const formatResults = (data: Partial<Record<Difficulty, InternalDifficult
         status: data.status,
         requiredPower: data.requiredPower,
         successChance,
-        needsAbilities: Boolean(data.randomSimulationResults),
+        needsAbilities: Boolean(data.randomSimulationResults?.length),
         totalBattleCount: data.totalBattleCount,
         currentBattleCount: data.currentBattleCount,
       });

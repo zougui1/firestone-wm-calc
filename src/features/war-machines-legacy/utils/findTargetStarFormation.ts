@@ -4,9 +4,9 @@ import { average } from '~/utils';
 
 import { ComputedWarMachine } from './computeBestCrew';
 import { formatResults, getTotalStars, simulateCampaignPrimary } from './simulateCampaignBattle'
-import { WarMachineName, warMachinesBaseData } from '../gameData/data';
-import { warMachineAbilityActivationChance, warMachineRarityLevelAvailabilities, warMachineRarityLevels, warMachineRarityLevelsReverse } from '../gameData/enums';
-import { GameData } from '../gameData/schemas';
+import { WarMachineName, warMachinesBaseData } from '../data';
+import { warMachineAbilityActivationChance, warMachineRarityLevelAvailabilities, warMachineRarityLevels, warMachineRarityLevelsReverse } from '../enums';
+import { WarMachineData } from '../schemas';
 import { invokeComputeBestCrew } from '../workers/computeBestCrew.invoke';
 
 const totalSimulations = 250;
@@ -19,7 +19,7 @@ interface WarMachineMetadata {
   isMain: boolean;
 }
 
-export const findTargetStarFormation = async (data: GameData, targetStarLevel: number, options?: FindTargetStarFormationOptions) => {
+export const findTargetStarFormation = async (data: WarMachineData['current'], targetStarLevel: number, options?: FindTargetStarFormationOptions) => {
   console.log('findTargetStarFormation')
   data = structuredClone(data);
 
@@ -150,26 +150,7 @@ export const findTargetStarFormation = async (data: GameData, targetStarLevel: n
 
 
   team = team.filter(wm => warMachinesMetadata[wm]?.isMain);
-
-  for (const warMachineName of rarityUpgrades) {
-    const warMachine = currentWarMachines.find(wm => wm.name === warMachineName);
-
-    if (!warMachine?.level) {
-      continue;
-    }
-
-    const currentRarityLevel = warMachineRarityLevels[warMachine.rarity];
-    const nexRarity = warMachineRarityLevelsReverse[currentRarityLevel + 1];
-    const requiredLevel = warMachineRarityLevelAvailabilities[nexRarity];
-
-    if (requiredLevel && nexRarity) {
-      if (warMachine.level < requiredLevel) {
-        warMachine.level = requiredLevel;
-      }
-
-      warMachine.rarity = nexRarity;
-    }
-  }
+  console.log('rarityUpgrades:', rarityUpgrades)
 
   let stars = 0;
   let upgradeWarMachineIndex = 0;

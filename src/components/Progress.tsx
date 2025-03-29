@@ -16,8 +16,16 @@ export const Progress = forwardRef<
     )}
   >
     <ProgressPrimitive.Indicator
-      className="h-full w-full flex-1 bg-primary transition-all"
-      style={{ transform: `translateX(-${100 - (Math.min(100, value ?? 0))}%)`, backgroundColor: color }}
+      className={cn(
+        'h-full flex-1 bg-primary',
+        value === undefined
+          ? 'absolute w-1/3 animate-[indeterminate_1.5s_infinite]'
+          : 'w-full transition-all',
+      )}
+      style={value !== undefined
+        ? { transform: `translateX(-${100 - (Math.min(100, value ?? 0))}%)`, backgroundColor: color }
+        : undefined
+      }
     />
   </ProgressPrimitive.Root>
 ));

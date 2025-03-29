@@ -6,10 +6,10 @@ import { Button, Dialog, Form } from '@zougui/react.ui'
 import { useAppForm } from '~/hooks';
 import { catchError } from '~/utils';
 
-import { ArtifactType, artifactTypeSchema, CrewHero, crewHeroSchema, WarMachine, warMachineSchema } from '../gameData/schemas';
-import { artifactTypeBaseData, ArtifactTypeName, WarMachineName, warMachinesBaseData } from '../gameData/data';
-import { warMachineRarityLevelsReverse } from '../gameData/enums';
-import { gameDataStore } from '../gameData/store';
+import { ArtifactType, artifactTypeSchema, CrewHero, crewHeroSchema, WarMachine, warMachineSchema } from '../schemas';
+import { artifactTypeBaseData, ArtifactTypeName, WarMachineName, warMachinesBaseData } from '../data';
+import { warMachineRarityLevelsReverse } from '../enums';
+import { warMachineStore } from '../warMachine.store';
 
 function jsonSchema<T extends z.ZodType>(schema: T) {
   return z.string().transform((str, ctx): z.infer<T> => {
@@ -27,7 +27,6 @@ function jsonSchema<T extends z.ZodType>(schema: T) {
     const result = schema.safeParse(data);
 
     if (!result.success) {
-      console.log('parse error:', result.error);
       ctx.addIssue({ code: 'custom', message: 'Invalid data' });
       return z.NEVER
     }
@@ -38,6 +37,7 @@ function jsonSchema<T extends z.ZodType>(schema: T) {
 
 const externalWarMachinesDataSchema = z.record(z.object({
   name: z.string(),
+  league_bonus: z.number().optional(),
   level: z.number(),
   sacred_card_level: z.number(),
   blueprint_damage: z.number(),
@@ -69,7 +69,10 @@ const externalWarMachinesDataSchema = z.record(z.object({
     }
   }
 
-  return warMachines;
+  return {
+    leagueBonus: inputWarMachines[0]?.league_bonus,
+    warMachines,
+  };
 });
 const externalHeroesDataSchema = z.record(z.object({
   name: z.string(),
@@ -161,8 +164,13 @@ const externalArtifactTypesDataSchema = z.object({
   } satisfies Record<ArtifactTypeName, ArtifactType>;
 });
 
+const internalWarMachinesDataSchema = z.object({
+  leagueBonus: z.number(),
+  warMachines: z.record(warMachineSchema),
+});
+
 export const formSchema = z.object({
-  warMachines: jsonSchema(externalWarMachinesDataSchema.or(z.record(warMachineSchema)).optional()),
+  warMachines: jsonSchema(externalWarMachinesDataSchema.or(internalWarMachinesDataSchema).optional()),
   heroes: jsonSchema(externalHeroesDataSchema.or(z.record(crewHeroSchema)).optional()),
   artifactTypes: jsonSchema(externalArtifactTypesDataSchema.or(z.record(artifactTypeSchema)).optional()),
 });
@@ -179,7 +187,7 @@ export const ImportDialog = ({ children }: ImportDialogProps) => {
   });
 
   const handleSubmit = form.handleSubmit(data => {
-    gameDataStore.trigger.import(data);
+    warMachineStore.trigger.import(data);
     handleOpenChange(false);
   });
 

@@ -5,10 +5,10 @@ import { Table, Input, Button } from '@zougui/react.ui';
 import { Progress } from '~/components/Progress';
 import { Avatar } from '~/components/Avatar';
 import { Card, CardContent } from '~/components/Card';
-import { gameDataStore } from '../gameData/store';
+import { warMachineStore } from '../warMachine.store';
 
 export const UiMockup = () => {
-  const { context } = gameDataStore.getSnapshot();
+  const { context } = warMachineStore.getSnapshot();
 
   const [warMachines, setWarMachines] = useState(context.current.warMachines);
   const [heroes, setHeroes] = useState(context.current.crewHeroes);

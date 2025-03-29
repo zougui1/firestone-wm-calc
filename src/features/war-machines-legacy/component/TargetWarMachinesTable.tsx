@@ -1,30 +1,11 @@
 import { useSelector } from '@xstate/store/react';
 import { type ColumnDef } from '@tanstack/react-table';
-import { isEqual, isNumber } from 'radash';
+import { isEqual } from 'radash';
 
 import { DataTable, Form, Input, Select } from '@zougui/react.ui';
 
-import { WarMachineRarity, warMachineRarityList } from '../gameData/enums';
-import { gameDataStore } from '../gameData/store';
-import { type WarMachine } from '../gameData/schemas';
-
-const handleLevelChange = (name: string, field: keyof WarMachine) => {
-  return (event: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Number(event.currentTarget.value);
-
-    if (!event.currentTarget.value) {
-      gameDataStore.trigger.updateWarMachine({
-        name,
-        data: { [field]: undefined },
-      });
-    } else if (isNumber(value)) {
-      gameDataStore.trigger.updateWarMachine({
-        name,
-        data: { [field]: value },
-      });
-    }
-  }
-}
+import { warMachineRarityList } from '../enums';
+import { warMachineStore } from '../warMachine.store';
 
 const columns: ColumnDef<string>[] = [
   {
@@ -41,12 +22,12 @@ const columns: ColumnDef<string>[] = [
     header: 'Level',
     cell: function Level({ row }) {
       const name = row.original;
-      const warMachine = useSelector(gameDataStore, state => state.context.warMachines[name]);
+      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
 
       return (
         <Input
           value={warMachine.level ?? ''}
-          onChange={handleLevelChange(name, 'level')}
+          readOnly
         />
       );
     },
@@ -56,12 +37,12 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Sacred Card Level</div>,
     cell: function SacredCardLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(gameDataStore, state => state.context.warMachines[name]);
+      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
 
       return (
         <Input
           value={warMachine.sacredCardLevel ?? ''}
-          onChange={handleLevelChange(name, 'sacredCardLevel')}
+          readOnly
         />
       );
     },
@@ -71,12 +52,12 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Damage Blueprint Level</div>,
     cell: function DamageBlueprintLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(gameDataStore, state => state.context.warMachines[name]);
+      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
 
       return (
         <Input
           value={warMachine.damageBlueprintLevel ?? ''}
-          onChange={handleLevelChange(name, 'damageBlueprintLevel')}
+          readOnly
         />
       );
     },
@@ -86,12 +67,12 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Health Blueprint Level</div>,
     cell: function HealthBlueprintLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(gameDataStore, state => state.context.warMachines[name]);
+      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
 
       return (
         <Input
           value={warMachine.healthBlueprintLevel ?? ''}
-          onChange={handleLevelChange(name, 'healthBlueprintLevel')}
+          readOnly
         />
       );
     },
@@ -101,12 +82,12 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Armor Blueprint Level</div>,
     cell: function ArmorBlueprintLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(gameDataStore, state => state.context.warMachines[name]);
+      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
 
       return (
         <Input
           value={warMachine.armorBlueprintLevel ?? ''}
-          onChange={handleLevelChange(name, 'armorBlueprintLevel')}
+          readOnly
         />
       );
     },
@@ -116,19 +97,12 @@ const columns: ColumnDef<string>[] = [
     header: 'Rarity Level',
     cell: function RarityLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(gameDataStore, state => state.context.warMachines[name]);
-
-      const handleChange = (value: string) => {
-        gameDataStore.trigger.updateWarMachineRarity({
-          name,
-          rarity: value as WarMachineRarity,
-        });
-      }
+      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
 
       return (
         <Select.Root
           value={warMachine.rarity}
-          onValueChange={handleChange}
+          open={false}
         >
           <Select.Trigger className="w-[20ch]">
             <Select.Value />
@@ -145,10 +119,10 @@ const columns: ColumnDef<string>[] = [
   },
 ];
 
-export const WarMachinesTable = () => {
+export const TargetWarMachinesTable = () => {
   const warMachines = useSelector(
-    gameDataStore,
-    state => Object.keys(state.context.warMachines),
+    warMachineStore,
+    state => Object.keys(state.context.target.warMachines).filter(name => state.context.target.warMachines[name]?.level),
     isEqual,
   );
 

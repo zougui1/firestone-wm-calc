@@ -4,20 +4,20 @@ import { isEqual, isNumber } from 'radash';
 
 import { DataTable, Input } from '@zougui/react.ui';
 
-import { gameDataStore } from '../gameData/store';
-import { type ArtifactType } from '../gameData/schemas';
+import { warMachineStore } from '../warMachine.store';
+import { type ArtifactType } from '../schemas';
 
 const handleChange = (name: string, field: keyof ArtifactType['percents']) => {
   return (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.currentTarget.value);
 
     if (!event.currentTarget.value) {
-      gameDataStore.trigger.updateArtifactTypes({
+      warMachineStore.trigger.updateArtifactTypes({
         name,
         data: { [field]: undefined },
       });
     } else if (isNumber(value)) {
-      gameDataStore.trigger.updateArtifactTypes({
+      warMachineStore.trigger.updateArtifactTypes({
         name,
         data: { [field]: value },
       });
@@ -33,7 +33,7 @@ const getPercentColumn = (percentage: keyof ArtifactType['percents']): ColumnDef
     ),
     cell: function Level({ row }) {
       const name = row.original;
-      const value = useSelector(gameDataStore, state => state.context.artifactTypes[name].percents[percentage]);
+      const value = useSelector(warMachineStore, state => state.context.current.artifactTypes[name].percents[percentage]);
 
       return (
         <Input
@@ -63,8 +63,8 @@ const columns: ColumnDef<string>[] = [
 
 export const ArtifactTypesTable = () => {
   const artifactTypes = useSelector(
-    gameDataStore,
-    state => Object.keys(state.context.artifactTypes),
+    warMachineStore,
+    state => Object.keys(state.context.current.artifactTypes),
     isEqual,
   );
 

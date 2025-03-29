@@ -2,10 +2,13 @@ import { useSelector } from '@xstate/store/react';
 import { type ColumnDef } from '@tanstack/react-table';
 import { isEqual } from 'radash';
 
-import { DataTable, Form, Input, Select } from '@zougui/react.ui';
+import { DataTable } from '@zougui/react.ui';
 
-import { warMachineRarityList } from '../enums';
-import { warMachineStore } from '../warMachine.store';
+import { gameDataStore } from '../gameData/store';
+import { targetCampaignStore } from '../targetCampaign';
+import { calculateBlueprintCost, calculateResources, estimateTimeForUpgrade } from '../utils';
+
+const numberFormatter = new Intl.NumberFormat('en-US');
 
 const columns: ColumnDef<string>[] = [
   {
@@ -22,13 +25,12 @@ const columns: ColumnDef<string>[] = [
     header: 'Level',
     cell: function Level({ row }) {
       const name = row.original;
-      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
+      const warMachine = useSelector(targetCampaignStore, state => state.context.warMachines[name]);
 
       return (
-        <Input
-          value={warMachine.level ?? ''}
-          readOnly
-        />
+        <div className="h-10 flex justify-center items-center">
+          {warMachine.level}
+        </div>
       );
     },
   },
@@ -37,13 +39,12 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Sacred Card Level</div>,
     cell: function SacredCardLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
+      const warMachine = useSelector(targetCampaignStore, state => state.context.warMachines[name]);
 
       return (
-        <Input
-          value={warMachine.sacredCardLevel ?? ''}
-          readOnly
-        />
+        <div className="h-10 flex justify-center items-center">
+          {warMachine.sacredCardLevel}
+        </div>
       );
     },
   },
@@ -52,13 +53,12 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Damage Blueprint Level</div>,
     cell: function DamageBlueprintLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
+      const warMachine = useSelector(targetCampaignStore, state => state.context.warMachines[name]);
 
       return (
-        <Input
-          value={warMachine.damageBlueprintLevel ?? ''}
-          readOnly
-        />
+        <div className="h-10 flex justify-center items-center">
+          {warMachine.damageBlueprintLevel}
+        </div>
       );
     },
   },
@@ -67,13 +67,12 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Health Blueprint Level</div>,
     cell: function HealthBlueprintLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
+      const warMachine = useSelector(targetCampaignStore, state => state.context.warMachines[name]);
 
       return (
-        <Input
-          value={warMachine.healthBlueprintLevel ?? ''}
-          readOnly
-        />
+        <div className="h-10 flex justify-center items-center">
+          {warMachine.healthBlueprintLevel}
+        </div>
       );
     },
   },
@@ -82,38 +81,195 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Armor Blueprint Level</div>,
     cell: function ArmorBlueprintLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
+      const warMachine = useSelector(targetCampaignStore, state => state.context.warMachines[name]);
 
       return (
-        <Input
-          value={warMachine.armorBlueprintLevel ?? ''}
-          readOnly
-        />
+        <div className="h-10 flex justify-center items-center">
+          {warMachine.armorBlueprintLevel}
+        </div>
       );
     },
   },
   {
     accessorKey: 'rarityLevel',
-    header: 'Rarity Level',
+    header: () => <div className="text-center">Rarity Level</div>,
     cell: function RarityLevel({ row }) {
       const name = row.original;
-      const warMachine = useSelector(warMachineStore, state => state.context.target.warMachines[name]);
+      const warMachine = useSelector(targetCampaignStore, state => state.context.warMachines[name]);
 
       return (
-        <Select.Root
-          value={warMachine.rarity}
-          open={false}
-        >
-          <Select.Trigger className="w-[20ch]">
-            <Select.Value />
-          </Select.Trigger>
+        <div className="h-10 flex justify-center items-center">
+          {warMachine.rarity}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'screws',
+    header: () => <div className="text-center">Screws</div>,
+    cell: function Level({ row }) {
+      const name = row.original;
+      const currentLevel = useSelector(gameDataStore, state => state.context.warMachines[name].level);
+      const targetLevel = useSelector(targetCampaignStore, state => state.context.warMachines[name].level);
 
-          <Select.Content>
-            {warMachineRarityList.map(rarity => (
-              <Form.Select.Item key={rarity} value={rarity} className="capitalize">{rarity}</Form.Select.Item>
-            ))}
-          </Select.Content>
-        </Select.Root>
+      const { screws } = calculateResources(currentLevel ?? 0, targetLevel ?? 0);
+
+      return (
+        <div className="h-10 flex justify-center items-center">
+          {screws || ''}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'cogs',
+    header: () => <div className="text-center">Cogs</div>,
+    cell: function Level({ row }) {
+      const name = row.original;
+      const currentLevel = useSelector(gameDataStore, state => state.context.warMachines[name].level);
+      const targetLevel = useSelector(targetCampaignStore, state => state.context.warMachines[name].level);
+
+      const { cogs } = calculateResources(currentLevel ?? 0, targetLevel ?? 0);
+
+      return (
+        <div className="h-10 flex justify-center items-center">
+          {cogs || ''}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'metal',
+    header: () => <div className="text-center">Metal</div>,
+    cell: function Level({ row }) {
+      const name = row.original;
+      const currentLevel = useSelector(gameDataStore, state => state.context.warMachines[name].level);
+      const targetLevel = useSelector(targetCampaignStore, state => state.context.warMachines[name].level);
+
+      const { metal } = calculateResources(currentLevel ?? 0, targetLevel ?? 0);
+
+      return (
+        <div className="h-10 flex justify-center items-center">
+          {metal || ''}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'expeditionTokens',
+    header: function ExpeditionTokenHeader() {
+      const currentWarMachines = useSelector(gameDataStore, state => state.context.warMachines);
+      const targetWarMachines = useSelector(targetCampaignStore, state => state.context.warMachines);
+
+      let totalexpeditionTokens = 0;
+
+      for (const [name, targetWarMachine] of Object.entries(targetWarMachines)) {
+        const currentWarMachine = currentWarMachines[name] ?? {};
+        const { expeditionTokens } = calculateResources(currentWarMachine.level ?? 0, targetWarMachine.level ?? 0);
+
+        totalexpeditionTokens += expeditionTokens;
+      }
+
+      return (
+        <div className="flex flex-col items-center text-center">
+          <div>Expedition Tokens</div>
+          <div>({numberFormatter.format(totalexpeditionTokens)})</div>
+        </div>
+      );
+    },
+    cell: function Level({ row }) {
+      const name = row.original;
+      const currentLevel = useSelector(gameDataStore, state => state.context.warMachines[name].level);
+      const targetLevel = useSelector(targetCampaignStore, state => state.context.warMachines[name].level);
+
+      const { expeditionTokens } = calculateResources(currentLevel ?? 0, targetLevel ?? 0);
+
+      return (
+        <div className="h-10 flex justify-center items-center">
+          {expeditionTokens || ''}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'blueprints',
+    header: function ExpeditionTokenHeader() {
+      const currentWarMachines = useSelector(gameDataStore, state => state.context.warMachines);
+      const targetWarMachines = useSelector(targetCampaignStore, state => state.context.warMachines);
+
+      let totalBlueprints = 0;
+
+      for (const [name, targetWarMachine] of Object.entries(targetWarMachines)) {
+        const currentWarMachine = currentWarMachines[name] ?? {};
+
+        const damageBlueprints = calculateBlueprintCost(currentWarMachine.damageBlueprintLevel ?? 0, targetWarMachine.damageBlueprintLevel ?? 0);
+        const healthBlueprints = calculateBlueprintCost(currentWarMachine.healthBlueprintLevel ?? 0, targetWarMachine.healthBlueprintLevel ?? 0);
+        const armorBlueprints = calculateBlueprintCost(currentWarMachine.armorBlueprintLevel ?? 0, targetWarMachine.armorBlueprintLevel ?? 0);
+
+        totalBlueprints += damageBlueprints + healthBlueprints + armorBlueprints;
+      }
+
+      return (
+        <div className="flex flex-col items-center text-center">
+          <div>Blueprints</div>
+          <div>({numberFormatter.format(totalBlueprints)})</div>
+        </div>
+      );
+    },
+    cell: function DamageBlueprintLevel({ row }) {
+      const name = row.original;
+      const currentWarMachine = useSelector(gameDataStore, state => state.context.warMachines[name]);
+      const targetWarMachine = useSelector(targetCampaignStore, state => state.context.warMachines[name]);
+
+      const damageBlueprints = calculateBlueprintCost(currentWarMachine.damageBlueprintLevel ?? 0, targetWarMachine.damageBlueprintLevel ?? 0);
+      const healthBlueprints = calculateBlueprintCost(currentWarMachine.healthBlueprintLevel ?? 0, targetWarMachine.healthBlueprintLevel ?? 0);
+      const armorBlueprints = calculateBlueprintCost(currentWarMachine.armorBlueprintLevel ?? 0, targetWarMachine.armorBlueprintLevel ?? 0);
+
+      const totalBlueprints = damageBlueprints + healthBlueprints + armorBlueprints;
+
+      return (
+        <div className="h-10 flex justify-center items-center">
+          {totalBlueprints || ''}
+        </div>
+      );
+    },
+  },
+  {
+    id: 'delay',
+    header: () => <div className="text-center">Delay</div>,
+    cell: function DamageBlueprintLevel({ row }) {
+      const name = row.original;
+      const currentLevel = useSelector(gameDataStore, state => state.context.warMachines[name].level);
+      const targetLevel = useSelector(targetCampaignStore, state => state.context.warMachines[name].level);
+
+      const requiredResources = calculateResources(currentLevel ?? 0, targetLevel ?? 0);
+      const delay = estimateTimeForUpgrade({
+        stars: 80,
+        emblems: 0,
+        ownedResources:{
+          screws: 0,
+          cogs: 0,
+          metal: 0,
+          expeditionTokens: 0,
+        },
+        requiredResources: {
+          ...requiredResources,
+          expeditionTokens: 0,
+        },
+      });
+
+      const getDelay = () => {
+        if (delay <= 0) {
+          return;
+        }
+
+        return delay === 1 ? `~${delay} day` : `~${delay} days`;
+      }
+
+      return (
+        <div className="h-10 flex justify-center items-center">
+          {getDelay()}
+        </div>
       );
     },
   },
@@ -121,8 +277,8 @@ const columns: ColumnDef<string>[] = [
 
 export const TargetWarMachinesTable = () => {
   const warMachines = useSelector(
-    warMachineStore,
-    state => Object.keys(state.context.target.warMachines).filter(name => state.context.target.warMachines[name]?.level),
+    gameDataStore,
+    state => Object.keys(state.context.warMachines).filter(name => state.context.warMachines[name]?.level),
     isEqual,
   );
 

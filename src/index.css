@@ -90,6 +90,11 @@
   pre {
     white-space: pre-wrap;
   }
+
+  @keyframes indeterminate {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
 }
 
 @layer {

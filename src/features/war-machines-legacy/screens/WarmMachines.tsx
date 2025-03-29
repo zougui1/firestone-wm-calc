@@ -1,4 +1,4 @@
-import { Button, Separator } from '@zougui/react.ui';
+import { Button } from '@zougui/react.ui';
 
 import { WarMachinesTable } from '../component/WarMachinesTable';
 import { CrewHeroesTable } from '../component/CrewHeroesTable';
@@ -6,7 +6,6 @@ import { ArtifactTypesTable } from '../component/ArtifactTypesTable';
 import { WarMachinesResult } from '../component/WarMachinesResult';
 import { ImportDialog } from '../component/ImportDialog';
 import { ExportDialog } from '../component/ExportDialog';
-import { TargetCampaign } from '~/features/war-machines/component/TargetCampaign';
 
 export const WarMachines = () => {
   return (
@@ -49,14 +48,6 @@ export const WarMachines = () => {
 
       <div className="lg:hidden">
         <WarMachinesResult />
-      </div>
-
-      <div>
-        <Separator className="my-8" />
-      </div>
-
-      <div className="compact-table">
-        <TargetCampaign />
       </div>
     </div>
   );

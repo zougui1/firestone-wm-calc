@@ -1,9 +1,9 @@
 import { isNumber, sort, sum } from 'radash';
 import munkres from 'munkres-js';
 
-import { type WarMachine, type CrewHero, type GameData } from '../gameData/schemas';
-import { WarMachineName, warMachinesBaseData } from '../gameData/data';
-import { WarMachineRarity, warMachineRarityLevels } from '../gameData/enums';
+import { type WarMachineData, type WarMachine, type CrewHero } from '../schemas';
+import { WarMachineName, warMachinesBaseData } from '../data';
+import { WarMachineRarity, warMachineRarityLevels } from '../enums';
 
 const getSafeNumber = (value: number | undefined): number => {
   return value ?? 0;
@@ -14,7 +14,7 @@ const generateHungarianArray = (
   heroes: CrewHero[],
   crewCount: number,
   scores: Record<WarMachineName, Record<string, number>>,
-  data: GameData,
+  data: WarMachineData['current'],
   engineerLevel: number,
 ): { hungarianArray: number[][]; warMachineOrder: WarMachine[]; heroOrder: string[]; } => {
   let hungarianArray: number[][] = [];
@@ -126,7 +126,7 @@ const calculateEngineerLevel = (totalXp: number): number => {
   return level;
 }
 
-export const computeBestCrew = (data: GameData) => {
+export const computeBestCrew = (data: WarMachineData['current']) => {
   const heroes = Object
     .values(data.crewHeroes)
     .filter(hero => getSafeNumber(hero.attributeArmor) || getSafeNumber(hero.attributeDamage) || getSafeNumber(hero.attributeHealth));
@@ -218,7 +218,7 @@ export const computeBestCrew = (data: GameData) => {
   };
 }
 
-const getWarMachineCampaignStats = (warMachine: WarMachine, crew: CrewHero[], data: GameData, engineerLevel: number) => {
+const getWarMachineCampaignStats = (warMachine: WarMachine, crew: CrewHero[], data: WarMachineData['current'], engineerLevel: number) => {
   const levelBonus = Math.pow(1.05, (warMachine.level ?? 1) - 1) - 1;
   const engineerBonus = Math.pow(1.05, (engineerLevel ?? 1) - 1) - 1;
   const rarityLevel = warMachineRarityLevels[warMachine.rarity];

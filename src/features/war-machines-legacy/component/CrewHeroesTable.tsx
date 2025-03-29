@@ -4,20 +4,20 @@ import { isEqual, isNumber } from 'radash';
 
 import { DataTable, Input } from '@zougui/react.ui';
 
-import {  gameDataStore } from '../gameData/store';
-import { type CrewHero } from '../gameData/schemas';
+import {  warMachineStore } from '../warMachine.store';
+import { type CrewHero } from '../schemas';
 
 const handleAttributeChange = (name: string, field: keyof CrewHero) => {
   return (event: React.ChangeEvent<HTMLInputElement>) => {
     const value = Number(event.currentTarget.value);
 
     if (!event.currentTarget.value) {
-      gameDataStore.trigger.updateCrewHero({
+      warMachineStore.trigger.updateCrewHero({
         name,
         data: { [field]: undefined },
       });
     } else if (isNumber(value)) {
-      gameDataStore.trigger.updateCrewHero({
+      warMachineStore.trigger.updateCrewHero({
         name,
         data: { [field]: value },
       });
@@ -40,7 +40,7 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Attribute Damage</div>,
     cell: function Level({ row }) {
       const name = row.original;
-      const crewHero = useSelector(gameDataStore, state => state.context.crewHeroes[name]);
+      const crewHero = useSelector(warMachineStore, state => state.context.current.crewHeroes[name]);
 
       return (
         <Input
@@ -56,7 +56,7 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Attribute Health</div>,
     cell: function Level({ row }) {
       const name = row.original;
-      const crewHero = useSelector(gameDataStore, state => state.context.crewHeroes[name]);
+      const crewHero = useSelector(warMachineStore, state => state.context.current.crewHeroes[name]);
 
       return (
         <Input
@@ -72,7 +72,7 @@ const columns: ColumnDef<string>[] = [
     header: () => <div className="text-center">Attribute Armor</div>,
     cell: function Level({ row }) {
       const name = row.original;
-      const crewHero = useSelector(gameDataStore, state => state.context.crewHeroes[name]);
+      const crewHero = useSelector(warMachineStore, state => state.context.current.crewHeroes[name]);
 
       return (
         <Input
@@ -87,8 +87,8 @@ const columns: ColumnDef<string>[] = [
 
 export const CrewHeroesTable = () => {
   const crewHeroes = useSelector(
-    gameDataStore,
-    state => Object.keys(state.context.crewHeroes),
+    warMachineStore,
+    state => Object.keys(state.context.current.crewHeroes),
     isEqual,
   );
 

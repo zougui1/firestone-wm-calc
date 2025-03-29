@@ -1,6 +1,6 @@
 import Worker from './computeBestCrew.worker?worker';
 import { type computeBestCrew } from '../utils';
-import { type WarMachineData } from '../gameData/schemas';
+import { type WarMachineData } from '../schemas';
 
 export const invokeComputeBestCrew = (
   data: WarMachineData['current'],

@@ -5,34 +5,32 @@ import { useQuery } from '@tanstack/react-query';
 
 import { catchError } from '~/utils';
 
-import { defaultData } from './defaultData';
+import { defaultGameData } from './defaultData';
 import {
   type ArtifactType,
   type CrewHero,
   type WarMachine,
-  type WarMachineData,
-  warMachineDataSchema,
+  type GameData,
+  gameDataSchema,
 } from './schemas';
 import { Difficulty, warMachineAbilityActivationChance, WarMachineRarity } from './enums';
-import { computeBestCrew, findTargetStarFormation } from './utils';
-import { CampaignDifficultySimulationResult, CampaignSimulationResult, formatResults, simulateCampaign, simulateCampaignPrimary, simulateDetailedCampaign } from './utils/simulateCampaignBattle';
+import { computeBestCrew, findTargetStarFormation } from '../utils';
+import { CampaignDifficultySimulationResult, CampaignSimulationResult, formatResults, simulateCampaignPrimary, simulateDetailedCampaign } from '../utils/simulateCampaignBattle';
 import { useSelector } from '@xstate/store/react';
 import { WarMachineName } from './data';
-import { useRef } from 'react';
-import { proxy, wrap } from 'comlink';
-import { invokeSimulateCampaign } from './workers/simulateCampaign.invoke';
-import { invokeComputeBestCrew } from './workers/computeBestCrew.invoke';
+import { invokeComputeBestCrew } from '../workers/computeBestCrew.invoke';
+import { targetCampaignStore } from '../targetCampaign';
 
 const storageKey = 'data';
 
-const parseStorageData = (value: string): WarMachineData | undefined => {
+const parseStorageData = (value: string): GameData | undefined => {
   const [jsonError, rawData] = catchError(() => JSON.parse(value));
 
   if (jsonError || !rawData || typeof rawData !== 'object') {
     return;
   }
 
-  const result = warMachineDataSchema.safeParse(rawData);
+  const result = gameDataSchema.safeParse(rawData);
 
   if (result.success) {
     return result.data;
@@ -45,119 +43,98 @@ const removeZeroValues = <T extends Record<string, unknown>>(obj: T): T => {
   ) as T;
 }
 
-export const warMachineStore = createStore({
-  context: parseStorageData(window.localStorage.getItem(storageKey) ?? '') ?? defaultData,
+export const gameDataStore = createStore({
+  context: parseStorageData(window.localStorage.getItem(storageKey) ?? '') ?? defaultGameData,
 
   on: {
-    updateLeagueBonus: (context, event: { leagueBonus: number | undefined }) => {
-      return produce(context, draft => {
-        draft.current.leagueBonus = event.leagueBonus;
-      });
-    },
-
     updateWarMachine: (context, event: { name: string; data: Partial<Omit<WarMachine, 'name'>> }) => {
       return produce(context, draft => {
-        if (!draft.current.warMachines[event.name]) {
+        if (!draft.warMachines[event.name]) {
           return;
         }
 
-        Object.assign(draft.current.warMachines[event.name], event.data);
+        Object.assign(draft.warMachines[event.name], event.data);
       });
     },
 
     updateWarMachineRarity: (context, event: { name: string; rarity: WarMachineRarity }) => {
       return produce(context, draft => {
-        if (!draft.current.warMachines[event.name]) {
+        if (!draft.warMachines[event.name]) {
           return;
         }
 
-        draft.current.warMachines[event.name].rarity = event.rarity;
+        draft.warMachines[event.name].rarity = event.rarity;
       });
     },
 
     updateCrewHero: (context, event: { name: string; data: Partial<Omit<CrewHero, 'name'>> }) => {
       return produce(context, draft => {
-        if (!draft.current.crewHeroes[event.name]) {
+        if (!draft.crewHeroes[event.name]) {
           return;
         }
 
-        Object.assign(draft.current.crewHeroes[event.name], event.data);
+        Object.assign(draft.crewHeroes[event.name], event.data);
       });
     },
 
     updateArtifactTypes: (context, event: { name: string; data: Partial<ArtifactType['percents']> }) => {
       return produce(context, draft => {
-        if (!draft.current.artifactTypes[event.name]) {
+        if (!draft.artifactTypes[event.name]) {
           return;
         }
 
-        Object.assign(draft.current.artifactTypes[event.name].percents, event.data);
+        Object.assign(draft.artifactTypes[event.name].percents, event.data);
       });
     },
 
     import: (
       context,
       event: {
-        warMachines?: {
-          leagueBonus?: number;
-          warMachines: Record<WarMachineName, WarMachine>;
-        };
+        warMachines?: Record<WarMachineName, WarMachine>;
         heroes?: Record<string, CrewHero>;
         artifactTypes?: Record<string, ArtifactType>;
       }
     ) => {
       return produce(context, draft => {
         if (event.warMachines) {
-          draft.current.leagueBonus = defaultData.current.leagueBonus;
-          draft.current.warMachines = defaultData.current.warMachines;
+          draft.warMachines = defaultGameData.warMachines;
 
-          if (event.warMachines.leagueBonus) {
-            draft.current.leagueBonus = event.warMachines.leagueBonus;
-          }
-
-          for (const warMachine of Object.values(event.warMachines.warMachines)) {
-            Object.assign(draft.current.warMachines[warMachine.name], removeZeroValues(warMachine));
+          for (const warMachine of Object.values(event.warMachines)) {
+            console.log('warMachine:', event.warMachines)
+            Object.assign(draft.warMachines[warMachine.name], removeZeroValues(warMachine));
           }
         }
 
         if (event.heroes) {
-          draft.current.crewHeroes = defaultData.current.crewHeroes;
+          draft.crewHeroes = defaultGameData.crewHeroes;
 
           for (const hero of Object.values(event.heroes)) {
-            Object.assign(draft.current.crewHeroes[hero.name], removeZeroValues(hero));
+            Object.assign(draft.crewHeroes[hero.name], removeZeroValues(hero));
           }
         }
 
         if (event.artifactTypes) {
-          draft.current.artifactTypes = defaultData.current.artifactTypes;
+          draft.artifactTypes = defaultGameData.artifactTypes;
 
           for (const artifactType of Object.values(event.artifactTypes)) {
-            Object.assign(draft.current.artifactTypes[artifactType.name].percents, removeZeroValues(artifactType.percents));
+            Object.assign(draft.artifactTypes[artifactType.name].percents, removeZeroValues(artifactType.percents));
           }
         }
-      });
-    },
-
-    changeTargetStar: (context, event: { starLevel: number; }) => {
-      return produce(context, draft => {
-        draft.target.starLevel = event.starLevel;
-      });
-    },
-
-    changeTargetFormation: (context, event: Pick<WarMachineData['target'], 'warMachines'>) => {
-      return produce(context, draft => {
-        draft.target.warMachines = event.warMachines;
       });
     },
   },
 });
 
-warMachineStore.subscribe(snapshot => {
-  window.localStorage.setItem(storageKey, JSON.stringify(snapshot.context));
+gameDataStore.subscribe(snapshot => {
+  const result = gameDataSchema.safeParse(snapshot.context);
+
+  if (result.success) {
+    window.localStorage.setItem(storageKey, JSON.stringify(result.data));
+  }
 });
 
 export const selectBestCampaignFormation = createSelector(
-  (state: SnapshotFromStore<typeof warMachineStore>) => state.context.current,
+  (state: SnapshotFromStore<typeof gameDataStore>) => state.context,
   state => {
     console.time('computeBestCrew')
     const res = computeBestCrew(state);
@@ -167,7 +144,7 @@ export const selectBestCampaignFormation = createSelector(
 );
 
 export const useBestCampaignFormation = () => {
-  const data = useSelector(warMachineStore, state => state.context.current);
+  const data = useSelector(gameDataStore, state => state.context);
 
   return useQuery({
     queryKey: ['computeBestCrew', data],
@@ -183,7 +160,7 @@ export const useCampaignSimulation = (options?: UseCampaignSimulationOptions) =>
 
   return useQuery({
     queryKey: ['simulateCampaign', data],
-    queryFn: ({ signal }) => {
+    queryFn: async ({ signal }) => {
       if (!data) {
         return null;
       }
@@ -199,12 +176,14 @@ export const useCampaignSimulation = (options?: UseCampaignSimulationOptions) =>
         signal,
       });
       const results = formatResults(primaryResult);
-      console.log('primaryResult:', primaryResult)
-      console.log('results:', results)
 
       const handleChange = (data: CampaignSimulationResult & { difficulty: Difficulty; }) => {
+        if (signal.aborted) {
+          console.log('simulation aborted');
+        }
+
         const difficulty = results[data.difficulty];
-        const missionIndex = difficulty?.missions.findIndex(m => m.level === data.level)
+        const missionIndex = difficulty?.missions.findIndex(m => m.level === data.level);
 
         if (difficulty && missionIndex !== undefined) {
           difficulty.missions[missionIndex] = data;
@@ -212,21 +191,26 @@ export const useCampaignSimulation = (options?: UseCampaignSimulationOptions) =>
         }
       }
 
-      simulateDetailedCampaign(primaryResult, warMachines, {
-        ...options,
-        onChange: handleChange,
-        signal,
-      });
+      try {
+        await simulateDetailedCampaign(primaryResult, warMachines, {
+          ...options,
+          onChange: handleChange,
+          signal,
+        });
+      } catch (error) {
+        console.error('campaign simulation error:', error)
+        throw error;
+      }
 
-      return null;
+      return results;
     },
     refetchOnWindowFocus: false,
   });
 }
 
 export const useTargetCampaignFormation = (options?: UseCampaignSimulationOptions) => {
-  const data = useSelector(warMachineStore, state => state.context.current);
-  const targhetStarLevel = useSelector(warMachineStore, state => state.context.target.starLevel);
+  const data = useSelector(gameDataStore, state => state.context);
+  const targhetStarLevel = useSelector(targetCampaignStore, state => state.context.starLevel);
 
   return useQuery({
     queryKey: ['findTargetStarFormation', data, targhetStarLevel],
@@ -236,13 +220,13 @@ export const useTargetCampaignFormation = (options?: UseCampaignSimulationOption
         //console.time('findTargetStarFormation')
         const result = await findTargetStarFormation(data, targhetStarLevel, { signal });
         //console.timeEnd('findTargetStarFormation')
-        warMachineStore.trigger.changeTargetFormation({
+        targetCampaignStore.trigger.changeTargetFormation({
           warMachines: result.warMachines,
         });
 
         return result;
       } catch (error) {
-        console.error('error:', error)
+        console.error('target campaign error:', error)
         throw error;
       }
     },
