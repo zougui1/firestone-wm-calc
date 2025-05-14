@@ -1,50 +1,9 @@
-# React + TypeScript + Vite
+# Firestone War Machines Calculator
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Firestone is a video game, which has war machines and a warfront campaign, with 90 missions yielding up to 5 stars each.
 
-Currently, two official plugins are available:
+This application calculates the best team possible given the war machines, and uses that team to calculate how many stars can be achieved with it. The result shows the missions and difficulties unlocked, and the success rate of those missions.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+It can also calculate the levels of the war machines required to reach a specific target star, based on an optimal strategy to upgrade them given the resource limitations, and a rough estimation of the time it would take to get there.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
-
-- Configure the top-level `parserOptions` property like this:
-
-```js
-export default tseslint.config({
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
-```
-
-- Replace `tseslint.configs.recommended` to `tseslint.configs.recommendedTypeChecked` or `tseslint.configs.strictTypeChecked`
-- Optionally add `...tseslint.configs.stylisticTypeChecked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and update the config:
-
-```js
-// eslint.config.js
-import react from 'eslint-plugin-react'
-
-export default tseslint.config({
-  // Set the react version
-  settings: { react: { version: '18.3' } },
-  plugins: {
-    // Add the react plugin
-    react,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended rules
-    ...react.configs.recommended.rules,
-    ...react.configs['jsx-runtime'].rules,
-  },
-})
-```
+The data entered is saved in the browser's local storage so that it is not needed to re-input them after refreshing the page.
