@@ -4,9 +4,10 @@ import { isEqual } from 'radash';
 
 import { DataTable } from '@zougui/react.ui';
 
-import { gameDataStore } from '../gameData/store';
+import { gameDataStore, useCampaignSimulation } from '../gameData/store';
 import { targetCampaignStore } from '../targetCampaign';
-import { calculateBlueprintCost, calculateResources, estimateTimeForUpgrade } from '../utils';
+import { calculateBlueprintCost, calculateResources, estimateTimeForUpgrade, getTotalStars } from '../utils';
+import { useMemo } from 'react';
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -241,22 +242,34 @@ const columns: ColumnDef<string>[] = [
       const name = row.original;
       const currentLevel = useSelector(gameDataStore, state => state.context.warMachines[name].level);
       const targetLevel = useSelector(targetCampaignStore, state => state.context.warMachines[name].level);
+      const { data, isLoading } = useCampaignSimulation();
 
-      const requiredResources = calculateResources(currentLevel ?? 0, targetLevel ?? 0);
-      const delay = estimateTimeForUpgrade({
-        stars: 80,
-        emblems: 0,
-        ownedResources:{
-          screws: 0,
-          cogs: 0,
-          metal: 0,
-          expeditionTokens: 0,
-        },
-        requiredResources: {
-          ...requiredResources,
-          expeditionTokens: 0,
-        },
-      });
+      const totalCampaignStarsPossible = useMemo(() => {
+        return (data && !isLoading) ? getTotalStars(data) : 0;
+      }, [data, isLoading]);
+
+      const delay = useMemo(() => {
+        if (totalCampaignStarsPossible <= 0) {
+          return 0;
+        }
+
+        const requiredResources = calculateResources(currentLevel ?? 0, targetLevel ?? 0);
+
+        return estimateTimeForUpgrade({
+          stars: totalCampaignStarsPossible,
+          emblems: 0,
+          ownedResources:{
+            screws: 0,
+            cogs: 0,
+            metal: 0,
+            expeditionTokens: 0,
+          },
+          requiredResources: {
+            ...requiredResources,
+            expeditionTokens: 0,
+          },
+        });
+      }, [totalCampaignStarsPossible, currentLevel, targetLevel]);
 
       const getDelay = () => {
         if (delay <= 0) {

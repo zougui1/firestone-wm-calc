@@ -1,11 +1,11 @@
-import { max, sort } from 'radash';
+import { min, max, sort, tryit } from 'radash';
 
 import { average } from '~/utils';
 
 import { ComputedWarMachine } from './computeBestCrew';
-import { formatResults, getTotalStars, simulateCampaignPrimary } from './simulateCampaignBattle'
+import { CampaignSimulationResult, formatResults, getTotalStars, simulateCampaignPrimary, simulateDetailedCampaign } from './simulateCampaignBattle'
 import { WarMachineName, warMachinesBaseData } from '../gameData/data';
-import { warMachineAbilityActivationChance, warMachineRarityLevelAvailabilities, warMachineRarityLevels, warMachineRarityLevelsReverse } from '../gameData/enums';
+import { Difficulty, warMachineAbilityActivationChance, warMachineRarityLevelAvailabilities, warMachineRarityLevels, warMachineRarityLevelsReverse } from '../gameData/enums';
 import { GameData } from '../gameData/schemas';
 import { invokeComputeBestCrew } from '../workers/computeBestCrew.invoke';
 
@@ -19,8 +19,10 @@ interface WarMachineMetadata {
   isMain: boolean;
 }
 
-export const findTargetStarFormation = async (data: GameData, targetStarLevel: number, options?: FindTargetStarFormationOptions) => {
+export const findTargetStarFormation = async (data: GameData, targetStar: TargetStar, options?: FindTargetStarFormationOptions) => {
   data = structuredClone(data);
+  let successChance = 100;
+  let needsAbilities = false;
 
   const currentBestCrew = await invokeComputeBestCrew(data, options);
   const currentWarMachines = Object.values(data.warMachines).filter(wm => wm.level);
@@ -173,10 +175,14 @@ export const findTargetStarFormation = async (data: GameData, targetStarLevel: n
   let stars = 0;
   let upgradeWarMachineIndex = 0;
 
-  while (stars < targetStarLevel) {
+  const canBeatTargetStar = () => {
+    return stars >= targetStar.starLevel;
+  }
+
+  while (!canBeatTargetStar()) {
     if (options?.signal?.aborted) {
       console.log('aborted');
-      return data;
+      break;
     }
 
     const computedData = await invokeComputeBestCrew(data, options);
@@ -189,10 +195,65 @@ export const findTargetStarFormation = async (data: GameData, targetStarLevel: n
       ...options,
       totalSimulations,
     });
-    stars = getTotalStars(formatResults(currentResult));
 
-    if (stars >= targetStarLevel) {
-      break;
+    const simulationResults = formatResults(currentResult);
+
+    let missions = Object
+      .values(simulationResults)
+      .flatMap(difficulty => difficulty.missions)
+      .filter(mission => (
+        mission.status === 'win' ||
+        mission.needsAbilities
+      ));
+    missions = sort(missions, mission => mission.successChance, true).slice(0, targetStar.starLevel);
+    stars = missions.length;
+
+    if (canBeatTargetStar()) {
+      const handleChange = (data: CampaignSimulationResult & { difficulty: Difficulty; }) => {
+        if (options?.signal?.aborted) {
+          console.log('simulation aborted');
+        }
+
+        const difficulty = simulationResults[data.difficulty];
+        const missionIndex = difficulty?.missions.findIndex(m => m.level === data.level);
+
+        if (difficulty && missionIndex !== undefined) {
+          difficulty.missions[missionIndex] = data;
+        }
+      }
+
+      try {
+        await simulateDetailedCampaign(currentResult, simulationWarMachines, {
+          ...options,
+          onChange: handleChange,
+          totalSimulations,
+        });
+      } catch (error) {
+        console.error('campaign simulation error:', error)
+      }
+
+      let missions = Object
+        .values(simulationResults)
+        .flatMap(difficulty => difficulty.missions)
+        .filter(mission => (
+          mission.successChance >= targetStar.minimumSuccessChance &&
+          (
+            mission.status === 'win' ||
+            mission.needsAbilities
+          )
+        ));
+      missions = sort(missions, mission => mission.successChance, true).slice(0, targetStar.starLevel);
+      stars = missions.length;
+      const hardestMission = min(missions, mission => mission.successChance);
+
+      if (hardestMission && successChance > hardestMission.successChance) {
+        successChance = hardestMission.successChance;
+        needsAbilities = hardestMission.needsAbilities;
+      }
+
+      if (canBeatTargetStar()) {
+        break;
+      }
     }
 
     if (upgradeWarMachineIndex >= team.length) {
@@ -216,29 +277,35 @@ export const findTargetStarFormation = async (data: GameData, targetStarLevel: n
     }
 
     upgradeWarMachine.level ??= 0;
-    const maxBlueprintLevel = Math.floor(upgradeWarMachine.level / 5) * 5 + 5;
-
-    const isBlueprintLevelMaxed = (blueprintLevel: number | undefined): boolean => {
-      return Boolean(blueprintLevel && blueprintLevel >= maxBlueprintLevel);
-    }
-
-    if (
-      isBlueprintLevelMaxed(upgradeWarMachine.damageBlueprintLevel) ||
-      isBlueprintLevelMaxed(upgradeWarMachine.healthBlueprintLevel)
-    ) {
-      upgradeWarMachine.level++;
-      continue;
-    }
+    upgradeWarMachine.level++;
 
     if (warMachineBaseData.specializationType === 'damage') {
-      upgradeWarMachine.damageBlueprintLevel = (upgradeWarMachine.damageBlueprintLevel ?? 0) + 5;
-    } else if (warMachineBaseData.specializationType === 'tank') {
-      upgradeWarMachine.damageBlueprintLevel = (upgradeWarMachine.damageBlueprintLevel ?? 0) + 5;
-      upgradeWarMachine.healthBlueprintLevel = (upgradeWarMachine.healthBlueprintLevel ?? 0) + 5;
+      upgradeWarMachine.damageBlueprintLevel = Math.floor(upgradeWarMachine.level / 5) * 5 + 5;
     }
+
+    if (warMachineBaseData.specializationType === 'tank') {
+      upgradeWarMachine.damageBlueprintLevel = Math.floor(upgradeWarMachine.level / 5) * 5 + 5;
+      upgradeWarMachine.healthBlueprintLevel = Math.floor(upgradeWarMachine.level / 5) * 5 + 5;
+      upgradeWarMachine.armorBlueprintLevel = Math.floor(upgradeWarMachine.level / 5) * 5 + 5;
+    }
+
+    // TODO do it up to a certain point where it's impossible to keep up upgrading the armor
+    //upgradeWarMachine.armorBlueprintLevel = Math.floor(upgradeWarMachine.level / 5) * 5 + 5;
   }
 
-  return data;
+  return {
+    ...data,
+    successChance,
+    needsAbilities,
+  };
+}
+
+export interface TargetStar {
+  starLevel: number;
+  /**
+   * percent from 0 to 100
+   */
+  minimumSuccessChance: number;
 }
 
 export interface FindTargetStarFormationOptions {

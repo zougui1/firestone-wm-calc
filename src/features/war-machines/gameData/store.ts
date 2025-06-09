@@ -210,15 +210,20 @@ export const useCampaignSimulation = (options?: UseCampaignSimulationOptions) =>
 
 export const useTargetCampaignFormation = (options?: UseCampaignSimulationOptions) => {
   const data = useSelector(gameDataStore, state => state.context);
-  const targhetStarLevel = useSelector(targetCampaignStore, state => state.context.starLevel);
+  const targetStarLevel = useSelector(targetCampaignStore, state => state.context.starLevel);
+  const minimumSuccessChance = useSelector(targetCampaignStore, state => state.context.minimumSuccessChance);
 
   return useQuery({
-    queryKey: ['findTargetStarFormation', data, targhetStarLevel],
+    queryKey: ['findTargetStarFormation', data, targetStarLevel, minimumSuccessChance],
     queryFn: async ({ signal }) => {
       try {
         //throw new Error('aborted');
         //console.time('findTargetStarFormation')
-        const result = await findTargetStarFormation(data, targhetStarLevel, { signal });
+        const result = await findTargetStarFormation(
+          data,
+          { starLevel: targetStarLevel, minimumSuccessChance },
+          { signal },
+        );
         //console.timeEnd('findTargetStarFormation')
         targetCampaignStore.trigger.changeTargetFormation({
           warMachines: result.warMachines,

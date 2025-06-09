@@ -598,7 +598,7 @@ export const simulateDetailedCampaign = async (
       return;
     }
 
-    await Promise.all(difficultyData.missions.map(async mission => {
+    await Promise.all(Object.values(difficultyData.missions).map(async mission => {
       if (mission.status !== 'lose' || !mission.randomSimulationResults) {
         return;
       }
