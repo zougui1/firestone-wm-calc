@@ -43,8 +43,10 @@ const removeZeroValues = <T extends Record<string, unknown>>(obj: T): T => {
   ) as T;
 }
 
+const optionalWindow = typeof window === 'object' ? window : undefined;
+
 export const gameDataStore = createStore({
-  context: parseStorageData(window.localStorage.getItem(storageKey) ?? '') ?? defaultGameData,
+  context: parseStorageData(optionalWindow?.localStorage.getItem(storageKey) ?? '') ?? defaultGameData,
 
   on: {
     updateWarMachine: (context, event: { name: string; data: Partial<Omit<WarMachine, 'name'>> }) => {
@@ -208,7 +210,7 @@ export const useCampaignSimulation = (options?: UseCampaignSimulationOptions) =>
   });
 }
 
-export const useTargetCampaignFormation = (options?: UseCampaignSimulationOptions) => {
+export const useTargetCampaignFormation = () => {
   const data = useSelector(gameDataStore, state => state.context);
   const targetStarLevel = useSelector(targetCampaignStore, state => state.context.starLevel);
   const minimumSuccessChance = useSelector(targetCampaignStore, state => state.context.minimumSuccessChance);

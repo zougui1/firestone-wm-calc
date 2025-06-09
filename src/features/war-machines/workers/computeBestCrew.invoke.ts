@@ -1,9 +1,28 @@
+import { z } from 'zod';
+
 import Worker from './computeBestCrew.worker?worker';
 import { type computeBestCrew } from '../utils';
-import { type WarMachineData } from '../gameData/schemas';
+import { type GameData } from '../gameData/schemas';
+import { warMachineNameList, warMachineRarityList } from '../gameData';
+
+const eventSchema = z.object({
+  type: z.literal('result'),
+  data: z.object({
+    campaignPower: z.number(),
+    warMachines: z.record(z.enum(warMachineNameList), z.object({
+      name: z.enum(warMachineNameList),
+      crew: z.array(z.string()),
+      power: z.number(),
+      damage: z.number(),
+      health: z.number(),
+      armor: z.number(),
+      rarity: z.enum(warMachineRarityList),
+    })),
+  }),
+});
 
 export const invokeComputeBestCrew = (
-  data: WarMachineData['current'],
+  data: GameData,
   options?: InvokeComputeBestCrewOptions,
 ): Promise<ReturnType<typeof computeBestCrew>> => {
   const worker = new Worker();
@@ -27,7 +46,11 @@ export const invokeComputeBestCrew = (
         result: resolve,
       };
 
-      handlers[event.data.type]?.(event.data.data);
+      const { data } = eventSchema.safeParse(event.data);
+
+      if (data) {
+        handlers[data.type]?.(data.data);
+      }
     }
 
     worker.postMessage([data]);

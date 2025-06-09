@@ -62,7 +62,7 @@ const generateHungarianArray = (
   }
 
   if (extraColumns > 0) {
-    hungarianArray.forEach((rowValue, rowIndex) => {
+    hungarianArray.forEach((_rowValue, rowIndex) => {
       for (let i = 0; i < (totalColumns + extraColumns); i++) {
         hungarianArray[rowIndex][i] ??= 0;
       }
@@ -156,7 +156,7 @@ export const computeBestCrew = (data: GameData) => {
   }
 
   const results = generateHungarianArray(warMachines, heroes, crewCount, scores, data, engineerLevel);
-  const assignments = munkres(results.hungarianArray) as [number, number][];
+  const assignments = munkres(results.hungarianArray);
   // Convert assignments to a dictionary-like object
   const optimalWarMachines = Object.fromEntries(assignments.map(([row, col]) => [row, col]));
 

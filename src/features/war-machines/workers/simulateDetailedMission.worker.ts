@@ -1,4 +1,4 @@
-import { simulateDetailedMission } from '../utils';
+import { simulateDetailedMission } from '../utils/simulateCampaignBattle';
 
 self.onmessage = async (event: MessageEvent<Parameters<typeof simulateDetailedMission>>) => {
   const [difficulty, mission, playerWarMachines] = event.data;

@@ -1,4 +1,4 @@
-import { computeBestCrew } from '../utils';
+import { computeBestCrew } from '../utils/computeBestCrew';
 
 self.onmessage = (event: MessageEvent<Parameters<typeof computeBestCrew>>) => {
   const [data] = event.data;

@@ -1,9 +1,9 @@
-import { min, max, sort, tryit } from 'radash';
+import { min, max, sort } from 'radash';
 
 import { average } from '~/utils';
 
 import { ComputedWarMachine } from './computeBestCrew';
-import { CampaignSimulationResult, formatResults, getTotalStars, simulateCampaignPrimary, simulateDetailedCampaign } from './simulateCampaignBattle'
+import { CampaignSimulationResult, formatResults, simulateCampaignPrimary, simulateDetailedCampaign } from './simulateCampaignBattle'
 import { WarMachineName, warMachinesBaseData } from '../gameData/data';
 import { Difficulty, warMachineAbilityActivationChance, warMachineRarityLevelAvailabilities, warMachineRarityLevels, warMachineRarityLevelsReverse } from '../gameData/enums';
 import { GameData } from '../gameData/schemas';
@@ -261,7 +261,7 @@ export const findTargetStarFormation = async (data: GameData, targetStar: Target
     }
 
     const upgradeWarMachine = data.warMachines[team[upgradeWarMachineIndex++]];
-    const warMachineMetadata = warMachinesMetadata[upgradeWarMachine.name];
+    //const warMachineMetadata = warMachinesMetadata[upgradeWarMachine.name];
     const warMachineBaseData = warMachinesBaseData[upgradeWarMachine.name];
 
     const currentRarityLevel = warMachineRarityLevels[upgradeWarMachine.rarity];

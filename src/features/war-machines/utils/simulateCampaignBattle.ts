@@ -616,7 +616,7 @@ export const simulateDetailedCampaign = async (
   }));
 }
 
-export const getTotalStars = (data: Partial<Record<Difficulty, CampaignDifficultySimulationResult>>, options?: SimulateCampaignOptions): number => {
+export const getTotalStars = (data: Partial<Record<Difficulty, CampaignDifficultySimulationResult>>): number => {
   let stars = 0;
 
   for (const difficultyData of Object.values(data)) {
